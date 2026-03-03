@@ -1,64 +1,79 @@
-import Image from "next/image";
+"use client";
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, Zap, ShieldCheck, Github, Link as LinkIcon } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 export default function Home() {
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [winner, setWinner] = useState<string | null>(null);
+
+  const startDraw = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setWinner("filat0vvv"); // Тестовое имя
+      setLoading(false);
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    }, 3000);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-[#0F172A] text-white selection:bg-cyan-500/30">
+      <nav className="p-8 flex justify-between items-center max-w-6xl mx-auto">
+        <div className="flex items-center gap-2 font-bold text-2xl tracking-tighter">
+          <div className="bg-indigo-600 p-1.5 rounded-lg"><Zap size={20}/></div>
+          OpenWinner
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <a href="https://github.com/filat0vvv" target="_blank" className="hover:opacity-70 transition">
+          <Github size={24}/>
+        </a>
+      </nav>
+
+      <main className="max-w-4xl mx-auto px-6 pt-20 text-center">
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          className="text-6xl font-extrabold mb-6"
+        >
+          Fair Choice. <span className="text-indigo-500">No Data Logs.</span>
+        </motion.h1>
+        
+        <p className="text-slate-400 text-lg mb-12">Вставьте ссылку на пост, чтобы выбрать победителя честно и прозрачно.</p>
+
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-3 rounded-2xl flex flex-col md:flex-row gap-3 mb-8">
+          <input 
+            type="text" 
+            placeholder="instagram.com/p/..." 
+            className="bg-transparent flex-1 px-4 outline-none border-none text-white"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+          <button 
+            onClick={startDraw}
+            disabled={loading || !url}
+            className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 px-8 py-4 rounded-xl font-bold transition-all"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {loading ? "Анализируем..." : "Выбрать победителя"}
+          </button>
         </div>
+
+        <div className="flex justify-center gap-6 text-slate-500 text-sm">
+          <span className="flex items-center gap-2"><ShieldCheck size={16}/> No DB</span>
+          <span className="flex items-center gap-2"><ShieldCheck size={16}/> Open Source</span>
+        </div>
+
+        <AnimatePresence>
+          {winner && (
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              className="mt-16 p-10 border border-indigo-500/30 rounded-3xl bg-indigo-500/5 relative overflow-hidden"
+            >
+              <Trophy className="absolute -top-10 -right-10 text-indigo-500/10" size={200} />
+              <h2 className="text-2xl font-bold mb-4">Наш победитель:</h2>
+              <div className="text-5xl font-black text-indigo-400 italic underline">@{winner}</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );
