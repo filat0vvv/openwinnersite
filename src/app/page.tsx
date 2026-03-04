@@ -9,6 +9,8 @@ import confetti from 'canvas-confetti';
 
 // Типы соцсетей для переключателя
 type SocialTab = 'instagram' | 'youtube' | 'vk' | 'telegram' | 'tiktok';
+// Типы розыгрыша
+type DrawType = 'comments' | 'likes' | 'followers' | 'reposts';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<SocialTab>('instagram');
@@ -18,6 +20,7 @@ export default function Home() {
   const [rollingName, setRollingName] = useState("");
   
   // Настройки фильтров
+  const [drawType, setDrawType] = useState<DrawType>('comments');
   const [onlyUnique, setOnlyUnique] = useState(true);
   const [minMentions, setMinMentions] = useState(0);
   const [checkSub, setCheckSub] = useState(false);
@@ -32,22 +35,23 @@ export default function Home() {
     tiktok: { color: 'from-slate-700 to-black', btn: 'bg-slate-800 hover:bg-slate-700', icon: <Zap size={18}/>, placeholder: 'Вставьте ссылку на видео TikTok...' }
   };
 
-  const mockParticipants = [
-    "@alex_winner", "@maria_nice", "@ivan_777", "@lucky_guy", 
-    "@star_girl", "@dmitry_dev", "@crypto_king", "@julia_smile"
-  ];
-
- const startDraw = async () => {
+  const startDraw = async () => {
     if (!url || loading) return;
     setLoading(true);
     setWinner(null);
 
     try {
-      // 1. Делаем реальный запрос к нашему API
+      // 1. Делаем реальный запрос к нашему универсальному API
+      // Передаем URL, платформу и тип розыгрыша (лайки/комменты/подписки)
       const response = await fetch('/api/instagram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ 
+            url, 
+            platform: activeTab, 
+            type: drawType,
+            options: { onlyUnique, minMentions, checkSub, checkRepost }
+        })
       });
 
       const data = await response.json();
@@ -58,7 +62,6 @@ export default function Home() {
         return;
       }
 
-      // 2. Получаем список ников из ответа
       const participants = data.participants.map((p: any) => p.username);
 
       // 3. Запускаем анимацию "барабана"
@@ -72,7 +75,7 @@ export default function Home() {
 
         if (iterations >= maxIterations) {
           clearInterval(interval);
-          finalizeWinner(participants); // Выбираем финального победителя
+          finalizeWinner(participants); 
         }
       }, 80);
 
@@ -115,7 +118,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0F172A] text-white selection:bg-indigo-500/30 font-sans">
-      {/* Навигация */}
       <nav className="p-6 flex justify-between items-center max-w-6xl mx-auto">
         <div className="flex items-center gap-2 font-black text-2xl tracking-tighter">
           <div className="bg-indigo-600 p-1.5 rounded-lg shadow-lg shadow-indigo-500/20">
@@ -129,12 +131,7 @@ export default function Home() {
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 pt-12 pb-20 text-center">
-        {/* Заголовок */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
             Fair Choice. <br/>
             <span className={`text-transparent bg-clip-text bg-gradient-to-r ${theme[activeTab].color}`}>
@@ -146,12 +143,11 @@ export default function Home() {
           </p>
         </motion.div>
 
-        {/* Переключатель вкладок */}
         <div className="flex flex-wrap justify-center gap-2 mb-8 p-1.5 bg-white/5 rounded-2xl border border-white/10 w-fit mx-auto backdrop-blur-md">
           {(Object.keys(theme) as SocialTab[]).map((tab) => (
             <button
               key={tab}
-              onClick={() => { setActiveTab(tab); setWinner(null); setUrl(''); }}
+              onClick={() => { setActiveTab(tab); setWinner(null); setUrl(''); setDrawType('comments'); }}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all capitalize text-sm ${activeTab === tab ? 'bg-white/10 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
             >
               <span className={activeTab === tab ? `text-transparent bg-clip-text bg-gradient-to-r ${theme[tab].color}` : ''}>
@@ -162,9 +158,23 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Основная панель */}
         <div className="bg-white/5 border border-white/10 p-6 md:p-8 rounded-[2.5rem] shadow-2xl backdrop-blur-sm mb-8">
           
+          {/* ВЫБОР ТИПА РОЗЫГРЫША */}
+          <div className="flex flex-wrap justify-center gap-3 mb-6">
+            <button onClick={() => setDrawType('comments')} className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${drawType === 'comments' ? 'bg-white/10 border-white/20 text-white' : 'border-transparent text-slate-500'}`}>
+                💬 Комментарии
+            </button>
+            <button onClick={() => setDrawType('likes')} className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${drawType === 'likes' ? 'bg-white/10 border-white/20 text-white' : 'border-transparent text-slate-500'}`}>
+                ❤️ Лайки
+            </button>
+            {(activeTab === 'instagram' || activeTab === 'vk' || activeTab === 'youtube' || activeTab === 'telegram') && (
+                <button onClick={() => setDrawType('followers')} className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${drawType === 'followers' ? 'bg-white/10 border-white/20 text-white' : 'border-transparent text-slate-500'}`}>
+                    👤 Подписчики
+                </button>
+            )}
+          </div>
+
           <div className="flex flex-col md:flex-row gap-3 mb-8">
             <div className="relative flex-1 group">
               <input 
@@ -189,7 +199,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Фильтры */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left border-t border-white/5 pt-6">
             <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
               <div className="flex items-center gap-3">
@@ -204,7 +213,6 @@ export default function Home() {
               />
             </div>
 
-            {/* Динамический фильтр для YouTube */}
             {activeTab === 'youtube' && (
               <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 animate-in fade-in slide-in-from-top-1">
                 <div className="flex items-center gap-3">
@@ -215,7 +223,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Динамический фильтр для ВК */}
             {activeTab === 'vk' && (
               <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 animate-in fade-in slide-in-from-top-1">
                 <div className="flex items-center gap-3">
@@ -242,29 +249,20 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Футер формы */}
         <div className="flex justify-center gap-8 text-slate-500 text-xs font-medium uppercase tracking-widest">
           <span className="flex items-center gap-2 hover:text-indigo-400 transition cursor-default"><ShieldCheck size={14}/> No Database</span>
           <span className="flex items-center gap-2 hover:text-indigo-400 transition cursor-default"><CheckCircle2 size={14}/> Verified Random</span>
         </div>
 
-        {/* Секция результата */}
         <AnimatePresence mode="wait">
           {(loading || winner) && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="mt-12 relative"
-            >
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="mt-12 relative">
               <div className={`p-1 rounded-[3rem] inline-block bg-gradient-to-r ${theme[activeTab].color}`}>
                 <div className="bg-[#0F172A] backdrop-blur-2xl px-16 py-12 rounded-[2.8rem] relative overflow-hidden min-w-[320px]">
                   <Trophy className="absolute -top-10 -right-10 text-white/5 rotate-12" size={240} />
-                  
                   <h2 className="text-slate-400 text-sm font-bold uppercase tracking-[0.2em] mb-6">
                     {loading ? "Выбираем..." : "Победитель!"}
                   </h2>
-                  
                   <div className="text-4xl md:text-6xl font-black text-white">
                     {loading ? (
                       <span className="opacity-30 italic">{rollingName}</span>
@@ -274,13 +272,8 @@ export default function Home() {
                       </span>
                     )}
                   </div>
-
                   {!loading && (
-                    <motion.div 
-                      initial={{ width: 0 }} 
-                      animate={{ width: "100%" }} 
-                      className={`h-1 mt-6 mx-auto rounded-full bg-gradient-to-r ${theme[activeTab].color}`}
-                    />
+                    <motion.div initial={{ width: 0 }} animate={{ width: "100%" }} className={`h-1 mt-6 mx-auto rounded-full bg-gradient-to-r ${theme[activeTab].color}`} />
                   )}
                 </div>
               </div>
